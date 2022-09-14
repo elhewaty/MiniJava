@@ -6,16 +6,13 @@
 
 using namespace std;
 
-bool fileScanner(const char *);
-bool fileParser(const char *fileName);
-
 int main(int argc, char const *argv[]) {
   string help = string("you can run MiniJava with these flags:\n") +
 	        "\t-h to show this list\n" +
 	        "\t-S to run the Scanner\n" +
 	        "\t-P to run the Parser\n" +
 	        "\t-A to print th AST\n" +
-	        "\t-T to run the type checker" +
+	        "\t-T to run the type checker\n" +
 	        "\t-C to convert the code to assembly.\n";
 
   if(argc <= 2) {

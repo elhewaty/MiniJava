@@ -57,6 +57,9 @@ VarDecl* Parser::ParseVarDecl() {
   }
   auto i = ParseIdentifier();
   if(!i) {
+    if(!IsVarStart(l.getCurrentToken())) {
+      l.getNextToken(); // Eat the Token
+    }
     return nullptr;
   }
   l.eat(S_COLON, ";");
@@ -103,11 +106,12 @@ MainClass* Parser::ParseMainClass() {
   l.eat(L_BRACKET, "{");
   auto s = ParseStatement();
   if(!c || !s || !a) {
-    err.error();
+    if(!s) {
+      std::cerr << "Maybe the main function is empty" << std::endl;
+    }
     std::cerr << "Cannot compile Main class, please hava a look at the `main` "
               << "funcation" << std::endl;
     err.failure();
-    exit(1);
   }
   l.eat(R_BRACKET, "}");
   l.eat(R_BRACKET, "}");
@@ -136,7 +140,7 @@ ClassDecl* Parser::ParseClassDecl() {
     }
     auto v = ParseVarDecl();
     if(!v) {
-      return nullptr;
+      continue;
     }
     vl.add(*v);
   }
@@ -144,7 +148,7 @@ ClassDecl* Parser::ParseClassDecl() {
   while(IsMethodStart(l.getCurrentToken())) {
     auto m = ParseMethodDecl();
     if(!m) {
-      return nullptr;
+      continue;
     }
     ml.add(*m);
   }
@@ -208,7 +212,7 @@ MethodDecl* Parser::ParseMethodDecl() {
     }
     auto v = ParseVarDecl();
     if(!v) {
-      return nullptr;
+      continue;
     }
     vl.add(*v);
   }
