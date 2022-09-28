@@ -167,6 +167,6 @@ consults the symbol table about variables and classes, e.g:</br>
 * non-boolean `if` expression.
 * and many more...
 
-The Symentic Phase code could be found in:
+You can find The Symentic Phase code in:
 `SymbolTable/`, `TypeCheckerVisitor.h`, `TypeCheckerVisitor.cpp`,</br>
 and `TypeVisitor.h`
