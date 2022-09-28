@@ -5,13 +5,16 @@
 #include <vector>
 
 class Visitor;
+class TypeVisitor;
 
 class ASTNode {
 public:
   ASTNode(Location pos): loc(pos) {}
   ASTNode() = default;
+  virtual Location getLocation() const { return loc; }
   virtual ~ASTNode() {};
   Location loc;
+  ASTNode* parent;
 };
 
 class Type : public ASTNode {
@@ -19,38 +22,48 @@ public:
   Type(Location l) : ASTNode(l) {}
   Type() = default;
   virtual void accept(Visitor& v) = 0;
+  virtual std::string accept(TypeVisitor& v) = 0;
+  virtual std::string stringize() = 0;
 };
 
 class ArrayType : public Type {
 public:
   ArrayType(Location l) : Type(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
+  virtual std::string stringize() override { return "int[]"; }
 };
 
 class IntType: public Type {
 public:
   IntType(Location l) : Type(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
+  virtual std::string stringize() override { return "int"; }
 };
 
 class BoolType: public Type {
 public:
   BoolType(Location l) : Type(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
+  virtual std::string stringize() override { return "boolean"; }
 };
 
 class IdentifierType : public Type {
 public:
   IdentifierType(std::string s, Location l) : s(s), Type(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
+  virtual std::string stringize() override { return s; }
   std::string s;
 };
 
 class Identifier : public ASTNode {
 public:
   Identifier(std::string s, Location l) : s(s), ASTNode(l) {}
-  std::string toString() { return s; }
   void accept(Visitor& v);
+  std::string accept(TypeVisitor& v);
   std::string s;
 };
 
@@ -59,6 +72,7 @@ public:
   VarDecl(Type* t, Identifier i, Location l) : t(t), i(i), ASTNode(l) {}
   VarDecl() = default;
   void accept(Visitor& v);
+  std::string accept(TypeVisitor& v);
   Type* t;
   Identifier i;
 };
@@ -77,6 +91,7 @@ public:
   Statement(Location l) : ASTNode(l) {}
   Statement() = default;
   virtual void accept(Visitor& v) {}
+  virtual std::string accept(TypeVisitor& v) = 0;
 };
 
 class StatementList : public ASTNode {
@@ -93,6 +108,7 @@ public:
   Expression(Location l) : ASTNode(l) {}
   Expression() = default;
   virtual void accept(Visitor& v) = 0;
+  virtual std::string accept(TypeVisitor& v) = 0;
 };
 
 class ExpressionList : public ASTNode {
@@ -113,6 +129,7 @@ public:
   BinOpExpression(TOK op, Expression* LHS, Expression* RHS, Location l)
     : op(op), LHS(LHS), RHS(RHS), Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Expression* LHS;
   Expression* RHS;
   TOK op;
@@ -123,6 +140,7 @@ public:
   ArrayLookup(Expression* e1, Expression* e2, Location l)
     : e1(e1), e2(e2), Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Expression* e1;
   Expression* e2;
 };
@@ -132,23 +150,27 @@ public:
   ArrayLength(Expression* e, Location l)
     : e(e), Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Expression* e;
 };
 
 class Call : public Expression {
 public:
-  Call(Expression* e, Identifier i, ExpressionList el)
-    : e(e), i(i), el(el) {}
+  Call(Expression* e, Identifier i, ExpressionList el, Location l)
+    : e(e), i(i), el(el), Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Expression* e;
   Identifier i;
   ExpressionList el;
+  Location l;
 };
 
 class IntegerLiteral : public Expression {
 public:
   IntegerLiteral(int n, Location l) : numberValue(n), Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   int numberValue;
 };
 
@@ -156,18 +178,21 @@ class True : public Expression {
 public:
   True(Location l) : Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
 };
 
 class False : public Expression {
 public:
   False(Location l) : Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
 };
 
 class IdentifierExp : public Expression {
 public:
   IdentifierExp(std::string s, Location l) : s(s), Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   std::string s;
 };
 
@@ -175,6 +200,7 @@ class This : public Expression {
 public:
   This(Location l) : Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
 };
 
 class NewArray : public Expression {
@@ -182,6 +208,7 @@ public:
   NewArray(Expression* e, Location l)
     : e(e), Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Expression* e;
 };
 
@@ -189,6 +216,7 @@ class NewObject : public Expression {
 public:
   NewObject(Identifier i, Location l) : i(i), Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Identifier i;
 };
 
@@ -197,6 +225,7 @@ public:
   Not(Expression* e, Location l)
     : e(e), Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Expression* e;
 };
 
@@ -205,6 +234,7 @@ public:
   ParenExpression(Expression* e, Location l)
     : e(e), Expression(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Expression* e;
 };
 
@@ -213,6 +243,7 @@ public:
   If(Expression* e, Statement* s1, Statement* s2, Location l)
     : e(e), s1(s1), s2(s2), Statement(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Expression* e;
   Statement* s1;
   Statement* s2;
@@ -223,6 +254,7 @@ public:
   While(Expression* e, Statement* s, Location l)
     : e(e), s(s), Statement(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Expression* e;
   Statement* s;
 };
@@ -231,6 +263,7 @@ class Print : public Statement {
 public:
   Print(Expression* e, Location l) : e(e), Statement(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Expression* e;
 };
 
@@ -239,6 +272,7 @@ public:
   Assign(Identifier i, Expression* e, Location l)
     : i(i), e(e), Statement(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Identifier i;
   Expression* e;
 };
@@ -248,6 +282,7 @@ public:
   ArrayAssign(Identifier i, Expression* e1, Expression* e2, Location l)
     : i(i), e1(e1), e2(e2), Statement(l) {}
   virtual void accept(Visitor& v);
+  virtual std::string accept(TypeVisitor& v);
   Identifier i;
   Expression* e1;
   Expression* e2;
@@ -257,6 +292,7 @@ class Block : public Statement {
 public:
   Block(StatementList sl, Location l) : sl(sl), Statement(l) {}
   void accept(Visitor& v);
+  std::string accept(TypeVisitor& v);
   StatementList sl;
 };
 
@@ -264,6 +300,7 @@ class Argument : public ASTNode {
 public:
   Argument(Type* t, Identifier i, Location l) : t(t), i(i), ASTNode(l) {}
   void accept(Visitor& v);
+  std::string accept(TypeVisitor& v);
   Type* t;
   Identifier i;
 };
@@ -284,6 +321,7 @@ public:
     : t(t), i(i), al(al), vl(vl), sl(sl), e(e) {}
   MethodDecl() = default;
   void accept(Visitor& v);
+  std::string accept(TypeVisitor& v);
   Type* t;
   Identifier i;
   ArgList al;
@@ -301,11 +339,12 @@ public:
   std::vector<MethodDecl> ml;
 };
 
-class ClassDecl : ASTNode {
+class ClassDecl : public ASTNode {
 public:
   ClassDecl(Location l) : ASTNode(l) {}
   ClassDecl() = default;
   virtual void accept(Visitor& v) {};
+  virtual std::string accept(TypeVisitor& v) = 0;
 };
 
 class ClassDeclSimple : public ClassDecl {
@@ -313,6 +352,7 @@ public:
   ClassDeclSimple(Identifier i, VarDeclList vl, MethodDeclList ml, Location l)
     : i(i), vl(vl), ml(ml), ClassDecl(l) {}
   void accept(Visitor& v) override;
+  std::string accept(TypeVisitor& v) override;
   Identifier i;
   VarDeclList vl;
   MethodDeclList ml;
@@ -324,6 +364,7 @@ public:
     Identifier j, Location l)
     : i(i), vl(vl), ml(ml), j(j), ClassDecl(l) {}
   void accept(Visitor& v) override;
+  std::string accept(TypeVisitor& v) override;
   Identifier i;
   Identifier j;
   VarDeclList vl;
@@ -344,6 +385,7 @@ public:
   MainClass(Identifier i, Identifier j, Statement* s, Location l)
     : i(i), j(j), s(s), ASTNode(l) {}
   void accept(Visitor& v);
+  std::string accept(TypeVisitor& v);
   Identifier i;
   Identifier j;
   Statement* s;
@@ -354,6 +396,7 @@ public:
   Program(MainClass mc, ClassDeclList c, Location l)
     : m(mc), cl(c), ASTNode(l) {}
   void accept(Visitor& v);
+  std::string accept(TypeVisitor& v);
   MainClass m;
   ClassDeclList cl;
 };

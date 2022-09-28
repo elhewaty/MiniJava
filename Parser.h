@@ -3,15 +3,28 @@
 
 #include "Lexer.h"
 #include "AST.h"
+#include <utility>
 #include <string>
+#include <stack>
+
+using namespace std;
 
 class Parser {
 public:
   Parser(std::string filename): l(filename) {}
   Program* parse();
+  vector<pair<string, string>> getEdges() const;
+  vector<pair<string, string>> getOrder() const;
 private:
   Lexer l;
   ErrorHandling err;
+  vector<pair<string, string>> edges;
+  // Used in top-sort to build symbol table in top-sort order.
+  // See ClassFilter.
+  vector<pair<string, string>> OrderEdge;
+
+  // Store the value of the current class we parse.
+  stack<string>CurClass;
   Program* ParseProgram();
   MainClass* ParseMainClass();
   ClassDecl* ParseClassDecl();

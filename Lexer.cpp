@@ -94,7 +94,9 @@ void Lexer::eat(TOK tk, std::string s) {
   if(tk != curToken) {
     err.emit(getLocation(),
              string("Expected `") + s + "`");
-    return;
+    if(isKeyWord(curToken)) {
+      return;
+    }
   }
   getNextToken();
 }

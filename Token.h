@@ -1,7 +1,6 @@
 #ifndef _TOKEN_H_
 #define _TOKEN_H_
 
-#include <memory>
 #include <string>
 
 // Keep track of the location

@@ -1,11 +1,19 @@
 #include "Parser.h"
 
+vector<pair<string, string>> Parser::getEdges() const {
+  return edges;
+}
+
+vector<pair<string, string>> Parser::getOrder() const {
+  return OrderEdge;
+}
+
 Identifier* Parser::ParseIdentifier() {
-  if(l.getCurrentToken() != ID) {
+  if(l.getCurrentToken() != ID && l.getCurrentToken() != MAIN) {
     err.emit(l.getLocation(), "expected identifier");
     return nullptr;
   }
-  std::string IdName = l.getIdToken();
+  string IdName = l.getIdToken();
   l.getNextToken(); // eat ID
   return new Identifier(IdName, l.getLocation());
 }
@@ -21,6 +29,7 @@ Type* Parser::ParseType() {
       break;
     case ID:
       re = ParseIdType();
+      OrderEdge.push_back({re->stringize(), CurClass.top()});
       break;
     default:
       err.emit(l.getLocation(), "expected type declaration.");
@@ -30,7 +39,7 @@ Type* Parser::ParseType() {
 }
 
 IdentifierType* Parser::ParseIdType() {
-  std::string IdName = l.getIdToken();
+  string IdName = l.getIdToken();
   l.eat(ID, "type name");
   return new IdentifierType(IdName, l.getLocation());
 }
@@ -70,8 +79,8 @@ VarDecl* Parser::ParseVarDecl() {
 Program* Parser::ParseProgram() {
   l.getNextToken();
   if(!IsClassStart(l.getCurrentToken())) {
-    std::cerr << "syntax error...\nPlease create a class for your project"
-              << std::endl;
+    cerr << "syntax error...\nPlease create a class for your project"
+         << endl;
     err.error();
     err.failure();
   }
@@ -84,6 +93,11 @@ Program* Parser::ParseProgram() {
     auto c = ParseClassDecl();
     if(c) {
       cl.add(c);
+    } else {
+      cerr << "Skipping Parsing operation for This class." << endl;
+      while(l.getCurrentToken() != CLASS) {
+        l.getNextToken();
+      }
     }
   }
   if(l.getCurrentToken() != TOK_EOF) {
@@ -107,10 +121,10 @@ MainClass* Parser::ParseMainClass() {
   auto s = ParseStatement();
   if(!c || !s || !a) {
     if(!s) {
-      std::cerr << "Maybe the main function is empty" << std::endl;
+      cerr << "Maybe the main function is empty" << endl;
     }
-    std::cerr << "Cannot compile Main class, please hava a look at the `main` "
-              << "funcation" << std::endl;
+    cerr << "Cannot compile Main class, please hava a look at the `main` "
+              << "funcation" << endl;
     err.failure();
   }
   l.eat(R_BRACKET, "}");
@@ -123,6 +137,9 @@ ClassDecl* Parser::ParseClassDecl() {
   //    "{" ( VarDeclaration )* ( MethodDeclaration )* "}"
   l.eat(CLASS, "class");
   auto i = ParseIdentifier();
+  if(!i) {
+    return nullptr;
+  }
   Identifier* j = nullptr;
   if(l.getCurrentToken() == EXTENDS) {
     l.eat(EXTENDS, "extends");
@@ -130,6 +147,7 @@ ClassDecl* Parser::ParseClassDecl() {
   }
   l.eat(L_BRACKET, "{");
   VarDeclList vl;
+  CurClass.push(i->s);
   while(IsVarStart(l.getCurrentToken())) {
     if(l.getCurrentToken() == ID) {
       TOK t = l.lookahead();
@@ -140,6 +158,10 @@ ClassDecl* Parser::ParseClassDecl() {
     }
     auto v = ParseVarDecl();
     if(!v) {
+      while(l.getCurrentToken() != S_COLON) {
+        l.getNextToken();
+      }
+      l.getNextToken();
       continue;
     }
     vl.add(*v);
@@ -148,14 +170,29 @@ ClassDecl* Parser::ParseClassDecl() {
   while(IsMethodStart(l.getCurrentToken())) {
     auto m = ParseMethodDecl();
     if(!m) {
+      cerr << "Skipping Parsing operation for this method" << endl;
+      while(!IsMethodStart(l.getCurrentToken())
+            && l.getCurrentToken() != RETURN) {
+        l.getNextToken();
+      }
+      l.getNextToken(); // Eat return
+      while(l.getCurrentToken() != R_BRACKET) {
+        l.getNextToken();
+      }
+      l.getNextToken(); // Eat `}`
       continue;
     }
     ml.add(*m);
   }
   l.eat(R_BRACKET, "}");
+  CurClass.pop();
   if(j) {
+    edges.push_back({i->s, j->s});
+    OrderEdge.push_back({j->s, i->s});
     return new ClassDeclExtends(*i, vl, ml, *j, l.getLocation());
   }
+  OrderEdge.push_back({i->s, ""});
+  edges.push_back({i->s, ""});
   return new ClassDeclSimple(*i, vl, ml, l.getLocation());
 }
 
@@ -193,6 +230,12 @@ MethodDecl* Parser::ParseMethodDecl() {
       a = ParseArgument();
       if(a) {
         al.add(*a);
+      } else {
+        while(l.getCurrentToken() != COMMA
+              || l.getCurrentToken() != R_PAREN) {
+          l.getNextToken();
+        }
+        continue;
       }
       if(l.getCurrentToken() == R_PAREN) {
         break;
@@ -212,6 +255,10 @@ MethodDecl* Parser::ParseMethodDecl() {
     }
     auto v = ParseVarDecl();
     if(!v) {
+      while(l.getCurrentToken() != S_COLON) {
+        l.getNextToken();
+      }
+      l.getNextToken();
       continue;
     }
     vl.add(*v);
@@ -467,7 +514,7 @@ Call* Parser::ParseCallExpression(Expression* LHS) {
     }
     l.eat(R_PAREN, ")");
   }
-  return new Call(LHS, *i, el);
+  return new Call(LHS, *i, el, l.getLocation());
 }
 
 Expression* Parser::ParseBeta() {
@@ -569,5 +616,8 @@ Program* Parser::parse() {
   freopen(l.getLocation().file.c_str(), "r", stdin);
   auto re = ParseProgram();
   fclose(stdin);
+  if(err.hasErrors()) {
+    err.failure();
+  }
   return re;
 }

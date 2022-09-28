@@ -1,8 +1,10 @@
 #include "Lexer.h"
 #include "Parser.h"
 #include "PrettyPrintVisitor.h"
+#include "SymbolTable/SymbolTableVisitor.h"
+#include "TypeCheckerVisitor.h"
+#include "ClassFilter.h"
 #include <cstring>
-#include <iostream>
 
 using namespace std;
 
@@ -30,6 +32,19 @@ int main(int argc, char const *argv[]) {
     auto pr = p.parse();
     PrettyPrintVisitor pret;
     pr->accept(pret);
+    delete pr;
+  } else if(strcmp("-T", argv[1]) == 0) {
+    Parser p(argv[2]);
+    auto pr = p.parse();
+    auto t = p.getEdges();
+    ClassFilter cf(p.getEdges(), p.getOrder());
+    cf.detect();
+    auto v = cf.getOrderList(); 
+    SymbolTableVisitor stv(v);
+    pr->accept(stv);
+    TypeCheckerVisitor tcv(stv.getSymbolTable());
+    pr->accept(tcv);
+    delete pr;
   }
   return 0;
 }

@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <cstdio>
-#include <string>
 #include "Token.h"
 
 #define RESET   "\033[0m"
@@ -14,6 +13,7 @@ public:
   ErrorHandling() {}
   void emit(Location loc, std::string message);
   void error() { errors++; }
+  int hasErrors() { return errors; }
   void failure();
 private:
   static int errors;

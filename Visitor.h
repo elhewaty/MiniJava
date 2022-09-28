@@ -1,8 +1,6 @@
 #ifndef _VISITOR_H_
 #define _VISITOR_H_
 
-#include <memory>
-
 class Program;
 class MainClass;
 class ClassDeclSimple;

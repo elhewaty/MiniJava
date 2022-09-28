@@ -11,11 +11,11 @@ void PrettyPrintVisitor::printTabs() const {
 
 void PrettyPrintVisitor::visit(Program* n) {
   n->m.accept(*this);
-  if(n->cl.size() == 0) {
-    return;
-  }
   for(int i = 0; i < n->cl.size(); i++) {
-    std::cout << std::endl;    
+    std::cout << std::endl;
+    if(n->cl.at(i) == nullptr) {
+      continue;
+    }
     n->cl.at(i)->accept(*this);
   }
 }
@@ -31,7 +31,9 @@ void PrettyPrintVisitor::visit(MainClass* n) {
   n->j.accept(*this);
   std::cout << ") {" << std::endl;
   incTabs();
-  n->s->accept(*this);
+  if(n->s) {
+    n->s->accept(*this);
+  }
   decTabs();
   printTabs();
   std::cout << "}" << std::endl;
@@ -39,6 +41,7 @@ void PrettyPrintVisitor::visit(MainClass* n) {
   printTabs();
   std::cout << "}" << std::endl;
 }
+
 void PrettyPrintVisitor::visit(ClassDeclSimple* n) {
   printTabs();
   std::cout << "class ";
@@ -79,7 +82,9 @@ void PrettyPrintVisitor::visit(ClassDeclExtends* n) {
 
 void PrettyPrintVisitor::visit(VarDecl* n) {
   printTabs();
-  n->t->accept(*this);
+  if(n->t) {
+    n->t->accept(*this);
+  }
   std::cout << " ";
   n->i.accept(*this);
   std::cout << ";\n";
@@ -89,7 +94,9 @@ void PrettyPrintVisitor::visit(MethodDecl* n) {
   std::cout << std::endl;
   printTabs();
   std::cout << "public ";
-  n->t->accept(*this);
+  if(n->t) {
+    n->t->accept(*this);
+  }
   std::cout << " ";
   n->i.accept(*this);
   std::cout << " (";
@@ -110,7 +117,9 @@ void PrettyPrintVisitor::visit(MethodDecl* n) {
   }
   printTabs();
   std::cout << "return ";
-  n->e->accept(*this);
+  if(n->e) {
+    n->e->accept(*this);
+  }
   std::cout << ";" << std::endl;
   decTabs();
   printTabs();
@@ -118,7 +127,9 @@ void PrettyPrintVisitor::visit(MethodDecl* n) {
 }
 
 void PrettyPrintVisitor::visit(Argument* n) {
-  n->t->accept(*this);
+  if(n->t) {
+    n->t->accept(*this);
+  }
   std::cout << " ";
   n->i.accept(*this);
 }
@@ -141,7 +152,9 @@ void PrettyPrintVisitor::visit(IdentifierType* n) {
 
 void PrettyPrintVisitor::visit(BinOpExpression* n) {
   std::cout << "(";
-  n->LHS->accept(*this);
+  if(n->LHS) {
+    n->LHS->accept(*this);
+  }
   switch(n->op) {
     case AND:
       std::cout << " && ";
@@ -162,7 +175,9 @@ void PrettyPrintVisitor::visit(BinOpExpression* n) {
       std::cerr << "Unknown binary operation" << std::endl;
       break;
   }
-  n->RHS->accept(*this);
+  if(n->RHS) {
+    n->RHS->accept(*this);
+  }
   std::cout << ")";
 }
 
@@ -170,6 +185,9 @@ void PrettyPrintVisitor::visit(Block* n) {
   std::cout << "{\n";
   incTabs();
   for(int i = 0; i < n->sl.size(); i++) {
+    if(n->sl.at(i) == nullptr) {
+      continue;
+    } 
     n->sl.at(i)->accept(*this);
   }
   decTabs();
@@ -180,40 +198,52 @@ void PrettyPrintVisitor::visit(Block* n) {
 void PrettyPrintVisitor::visit(If* n) {
   printTabs();
   std::cout << "If (";
-  n->e->accept(*this);
+  if(n->e) {
+    n->e->accept(*this);
+  }
   std::cout << ") ";
   if(!dynamic_cast<Block*>(n->s1)) {
     std::cout << std::endl;
     incTabs();
   }
-  n->s1->accept(*this);
-  if(!dynamic_cast<Block*>(n->s1)) {
-    decTabs();
+  if(n->s1) {
+    n->s1->accept(*this);
+    if(!dynamic_cast<Block*>(n->s1)) {
+      decTabs();
+    }
   }
   printTabs();
   std::cout << "else ";
-  if(!dynamic_cast<Block*>(n->s2)) {
-    std::cout << std::endl;
-    incTabs();
-  }
-  n->s2->accept(*this);
-  if(!dynamic_cast<Block*>(n->s2)) {
-    decTabs();
+  if(n->s2) {
+    if(!dynamic_cast<Block*>(n->s2)) {
+      std::cout << std::endl;
+      incTabs();
+    }
+    n->s2->accept(*this);
+    if(!dynamic_cast<Block*>(n->s2)) {
+      decTabs();
+    }
   }
 }
 
 void PrettyPrintVisitor::visit(While* n) {
   printTabs();
   std::cout << "while (";
-  n->e->accept(*this);
+  if(n->e) {
+    n->e->accept(*this);
+  }
   std::cout << ")";
-  n->s->accept(*this);
+  if(n->s) {
+    n->s->accept(*this);
+  }
 }
 
 void PrettyPrintVisitor::visit(Print* n) {
   printTabs();
   std::cout << "System.out.println(";
-  n->e->accept(*this);
+  if(n->e) {
+    n->e->accept(*this);
+  }
   std::cout << ");" << std::endl;
 }
 
@@ -221,7 +251,9 @@ void PrettyPrintVisitor::visit(Assign* n) {
   printTabs();
   n->i.accept(*this);
   std::cout << " = ";
-  n->e->accept(*this);
+  if(n->e) {
+    n->e->accept(*this);
+  }
   std::cout << ";\n";
 }
 
@@ -229,31 +261,46 @@ void PrettyPrintVisitor::visit(ArrayAssign* n) {
   printTabs();
   n->i.accept(*this);
   std::cout << "[";
-  n->e1->accept(*this);
+  if(n->e1) {
+    n->e1->accept(*this);
+  }
   std::cout << "]";
   std::cout << " = ";
-  n->e2->accept(*this);
+  if(n->e2) {
+    n->e2->accept(*this);
+  }
   std::cout << ";\n";
 }
 
 void PrettyPrintVisitor::visit(ArrayLookup* n) {
-  n->e1->accept(*this);
+  if(n->e1) {
+    n->e1->accept(*this);
+  }
   std::cout << "[";
-  n->e2->accept(*this);
+  if(n->e2) {
+    n->e2->accept(*this);
+  }
   std::cout << "]";
 }
 
 void PrettyPrintVisitor::visit(ArrayLength* n) {
-  n->e->accept(*this);
+  if(n->e) {
+    n->e->accept(*this);
+  }
   std::cout << ".length";
 }
 
 void PrettyPrintVisitor::visit(Call* n) {
-  n->e->accept(*this);
+  if(n->e) {
+    n->e->accept(*this);
+  }
   std::cout << ".";
   n->i.accept(*this);
   std::cout << "(";
   for (int i = 0; i < n->el.size(); i++) {
+    if(n->el.at(i) == nullptr) {
+      continue;
+    }
     n->el.at(i)->accept(*this);
     if(i + 1 < n->el.size()) {
       std::cout << ", ";
@@ -284,7 +331,9 @@ void PrettyPrintVisitor::visit(This* n) {
 
 void PrettyPrintVisitor::visit(NewArray* n) {
   std::cout << "new int [";
-  n->e->accept(*this);
+  if(n->e) {
+    n->e->accept(*this);
+  }
   std::cout << "]";
 }
 
