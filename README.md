@@ -22,6 +22,7 @@ You can Run with the following flags:</br>
 * `-S` to see the program from the `Lexer` prospective (Tokens).
 * `-P` to see the program from the `Parser` prospective for example:</br>
 if we have `x + y * z` it becomes `(x + (y * z))`.
+* `-T` to run the type checker.
 * I will add more flags for every finished phase.
 # Motivation
 This is a side-project I totally built myself. The project</br>
