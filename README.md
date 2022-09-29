@@ -104,7 +104,7 @@ This phase is seriously challenging assume the following problems:
     int fii() {int a; return a;}
     int tii() {retuen 0;}
   }
-  class B extends {
+  class B extends A {
     int a;
     int foo(int a) {return a;}
     int fee() {return a;}
