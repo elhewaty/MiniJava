@@ -32,7 +32,6 @@ int main(int argc, char const *argv[]) {
     auto pr = p.parse();
     PrettyPrintVisitor pret;
     pr->accept(pret);
-    delete pr;
   } else if(strcmp("-T", argv[1]) == 0) {
     Parser p(argv[2]);
     auto pr = p.parse();
@@ -44,7 +43,6 @@ int main(int argc, char const *argv[]) {
     pr->accept(stv);
     TypeCheckerVisitor tcv(stv.getSymbolTable());
     pr->accept(tcv);
-    delete pr;
   }
   return 0;
 }

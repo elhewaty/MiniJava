@@ -59,19 +59,19 @@ string MethodSymbol::stringize() const {
   return s;
 }
 
-vector<VarSymbol*> MethodSymbol::getParameters() const {
+vector<shared_ptr<VarSymbol>> MethodSymbol::getParameters() const {
   return parameters;
 }
 
-void MethodSymbol::addParameter(VarSymbol* s) {
+void MethodSymbol::addParameter(shared_ptr<VarSymbol> s) {
   parameters.push_back(s);
 }
 
-void MethodSymbol::addLocal(VarSymbol* s) {
+void MethodSymbol::addLocal(shared_ptr<VarSymbol> s) {
   locals[s->stringize()] = 1;;
 }
 
-bool MethodSymbol::varExists(VarSymbol* s) const {
+bool MethodSymbol::varExists(shared_ptr<VarSymbol> s) const {
   return locals.count(s->stringize());
 }
 
@@ -96,11 +96,11 @@ string ClassSymbol::stringize() const {
   return "class: " + getName() + " " + getType();
 }
 
-vector<MethodSymbol*> ClassSymbol::getMethods() const {
+vector<shared_ptr<MethodSymbol>> ClassSymbol::getMethods() const {
   return methods;
 }
 
-MethodSymbol* ClassSymbol::getMethod(string s) const {
+shared_ptr<MethodSymbol> ClassSymbol::getMethod(string s) const {
   for(int i = 0; i < (int)methods.size(); i++) {
     auto m = methods[i];
     if(m->getName() == s) {
@@ -110,19 +110,19 @@ MethodSymbol* ClassSymbol::getMethod(string s) const {
   return nullptr;
 }
 
-vector<VarSymbol*> ClassSymbol::getVariables() const {
+vector<shared_ptr<VarSymbol>> ClassSymbol::getVariables() const {
   return vars;
 }
 
-void ClassSymbol::addMethod(MethodSymbol* ms) {
+void ClassSymbol::addMethod(shared_ptr<MethodSymbol> ms) {
   methods.push_back(ms);
 }
 
-void ClassSymbol::addVariable(VarSymbol* vs) {
+void ClassSymbol::addVariable(shared_ptr<VarSymbol> vs) {
   vars.push_back(vs);
 }
 
-void ClassSymbol::addVarInExtClass(VarSymbol* vs) {
+void ClassSymbol::addVarInExtClass(shared_ptr<VarSymbol> vs) {
   for(int i = 0; i < (int)vars.size(); i++) {
     if(vars[i]->getName() == vs->getName()) {
       vars[i] = vs;
@@ -132,14 +132,14 @@ void ClassSymbol::addVarInExtClass(VarSymbol* vs) {
   vars.push_back(vs);
 }
 
-void ClassSymbol::parentClass(ClassSymbol* cs) {
+void ClassSymbol::parentClass(shared_ptr<ClassSymbol> cs) {
   auto m = cs->getMethods();
   auto v = cs->getVariables();
   methods.insert(methods.end(), m.begin(), m.end());
   vars.insert(vars.end(), v.begin(), v.end());
 }
 
-void ClassSymbol::replaceMethod(MethodSymbol* ms) {
+void ClassSymbol::replaceMethod(shared_ptr<MethodSymbol> ms) {
   for(int i = 0; i < methods.size(); i++) {
     if(methods[i]->getName() == ms->getName()) {
       methods[i] = ms;

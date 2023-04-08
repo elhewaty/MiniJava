@@ -9,9 +9,7 @@
 class TypeCheckerVisitor : public TypeVisitor {
 public:
   TypeCheckerVisitor() = default;
-  TypeCheckerVisitor(SymbolTable* symTab) {
-    SymTable = symTab;
-  }
+  TypeCheckerVisitor(shared_ptr<SymbolTable> symTab) : SymTable(symTab) {}
   virtual string visit(Program* n) override;
   virtual string visit(MainClass* n) override;
   virtual string visit(ClassDeclSimple* n) override;
@@ -43,12 +41,12 @@ public:
   virtual string visit(Not* n) override;
   virtual string visit(Identifier* n) override;
 private:
-  SymbolTable* SymTable = nullptr;
+  shared_ptr<SymbolTable> SymTable = nullptr;
   ErrorHandling err;
   // This stack holds the class we are in its scope.
   // We use this stack to evaluate `this` Identifier.
-  stack<ClassSymbol*> CurClass;
-  map<string, ClassSymbol*> classList;
+  stack<shared_ptr<ClassSymbol>> CurClass;
+  map<string, shared_ptr<ClassSymbol>> classList;
 };
 
 #endif

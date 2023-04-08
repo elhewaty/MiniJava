@@ -17,7 +17,7 @@ string TypeCheckerVisitor::visit(Program* n) {
 string TypeCheckerVisitor::visit(MainClass* n) {
   string s = n->i.accept(*this);
   SymTable = SymTable->getScope(n->i.s);
-  CurClass.push(new ClassSymbol(n->i.s, ""));
+  CurClass.push(make_shared<ClassSymbol>(n->i.s, ""));
   SymTable = SymTable->getScope("main");
   n->s->accept(*this);
   SymTable = SymTable->exitScope();
@@ -31,7 +31,7 @@ string TypeCheckerVisitor::visit(MainClass* n) {
 // MethodDeclList ml;
 string TypeCheckerVisitor::visit(ClassDeclSimple* n) {
   string s = n->i.accept(*this);
-  CurClass.push(new ClassSymbol(n->i.s, ""));
+  CurClass.push(make_shared<ClassSymbol>(n->i.s, ""));
   SymTable = SymTable->getScope(n->i.s);
   for(int i = 0; i < (int)n->vl.size(); i++) {
     n->vl.at(i).accept(*this);
@@ -51,7 +51,7 @@ string TypeCheckerVisitor::visit(ClassDeclSimple* n) {
 string TypeCheckerVisitor::visit(ClassDeclExtends* n) {
   string s = n->i.accept(*this);
   string t = n->j.accept(*this);
-  CurClass.push(new ClassSymbol(n->i.s, n->j.s));
+  CurClass.push(make_shared<ClassSymbol>(n->i.s, n->j.s));
   SymTable = SymTable->getScope(n->i.s);
   for(int i = 0; i < (int)n->vl.size(); i++) {
     n->vl.at(i).accept(*this);
@@ -64,18 +64,18 @@ string TypeCheckerVisitor::visit(ClassDeclExtends* n) {
   return s;
 }
 
-// Type *t
+// shared_ptr<Type> t
 // Identifier
 string TypeCheckerVisitor::visit(VarDecl* n) {
   return n->t->accept(*this);
 }
 
-// Type* t
+// shared_ptr<Type> t
 // Identifier i
 // ArgList al
 // VarDeclList vl
 // StatementList sl
-// Expression *e
+// shared_ptr<Expression> e
 string TypeCheckerVisitor::visit(MethodDecl* n) {
   string s = n->i.accept(*this);
   SymTable = SymTable->getScope(n->i.s);
@@ -120,7 +120,7 @@ string TypeCheckerVisitor::visit(MethodDecl* n) {
   return s;
 }
 
-// Type *t
+// shared_ptr<Type> t
 // Identifier i
 string TypeCheckerVisitor::visit(Argument* n) {
   return n->t->accept(*this);
@@ -281,7 +281,7 @@ string TypeCheckerVisitor::visit(Call* n) {
     err.emit(n->getLocation(), "Undefined class object" );
     return "";
   }
-  MethodSymbol* MethSym = classList[s]->getMethod(n->i.s);
+  auto MethSym = classList[s]->getMethod(n->i.s);
   if(MethSym == nullptr) {
     cerr << BOLDRED << "Error:" << RESET << " class " << s
          << " doesn't have function " + n->i.s << "." << endl;
@@ -304,8 +304,8 @@ string TypeCheckerVisitor::visit(Call* n) {
   for(int i = 0; i < (int)n->el.size(); i++) {
     string needed = v[i]->getType();
     string found = n->el.at(i)->accept(*this);
-    Symbol* sym = (found != "") ? SymTable->symbolLookup(found) : nullptr;
-    if(sym != nullptr && dynamic_cast<ClassSymbol*>(sym)) {
+    auto sym = (found != "") ? SymTable->symbolLookup(found) : nullptr;
+    if(sym != nullptr && dynamic_pointer_cast<ClassSymbol>(sym)) {
       string found__ = sym->getType();
       if(found != needed && found__ != needed) {
         err.emit(n->getLocation(),
@@ -343,7 +343,7 @@ string TypeCheckerVisitor::visit(IdentifierExp* n) {
 }
 
 string TypeCheckerVisitor::visit(This* n) {
-  ClassSymbol* ClSym = CurClass.top();
+  auto ClSym = CurClass.top();
   return ClSym->getName();
 }
 
@@ -373,7 +373,7 @@ string TypeCheckerVisitor::visit(Not* n) {
 }
 
 string TypeCheckerVisitor::visit(Identifier* n) {
-  Symbol* sym = SymTable->symbolLookup(n->s);
+  auto sym = SymTable->symbolLookup(n->s);
   if(sym == nullptr) {
     err.emit(n->getLocation(), "Symbol " + n->s + " was not declared");
     return "";

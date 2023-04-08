@@ -12,7 +12,7 @@ using namespace std;
 class Parser {
 public:
   Parser(std::string filename): l(filename) {}
-  Program* parse();
+  shared_ptr<Program> parse();
   vector<pair<string, string>> getEdges() const;
   vector<pair<string, string>> getOrder() const;
 private:
@@ -25,29 +25,29 @@ private:
 
   // Store the value of the current class we parse.
   stack<string>CurClass;
-  Program* ParseProgram();
-  MainClass* ParseMainClass();
-  ClassDecl* ParseClassDecl();
-  VarDecl* ParseVarDecl();
-  MethodDecl* ParseMethodDecl();
+  shared_ptr<Program> ParseProgram();
+  shared_ptr<MainClass> ParseMainClass();
+  shared_ptr<ClassDecl> ParseClassDecl();
+  shared_ptr<VarDecl> ParseVarDecl();
+  shared_ptr<MethodDecl> ParseMethodDecl();
 
-  Argument* ParseArgument();
+  shared_ptr<Argument> ParseArgument();
 
-  Type* ParseType();
+  shared_ptr<Type> ParseType();
   // We need this to parse int types.
   // Arrays and int types has the same start symbols
   // int x; 
   // int [] x;
-  Type* ParseTypeHelper();
-  BoolType* ParseBoolType();
-  IdentifierType* ParseIdType();
+  shared_ptr<Type> ParseTypeHelper();
+  shared_ptr<BoolType> ParseBoolType();
+  shared_ptr<IdentifierType> ParseIdType();
 
-  Statement* ParseStatement();
-  Block* ParseBlock();
-  If* ParseIf();
-  While* ParseWhile();
-  Print* ParsePrint();
-  Statement* ParseStatementHelper();
+  shared_ptr<Statement> ParseStatement();
+  shared_ptr<Block> ParseBlock();
+  shared_ptr<If> ParseIf();
+  shared_ptr<While> ParseWhile();
+  shared_ptr<Print> ParsePrint();
+  shared_ptr<Statement> ParseStatementHelper();
 
   // To parse expression we should elimenate left recuresion.
   // Expression ::= Expression ( "&&" | "<" | "+" | "-" | "*" ) Expression
@@ -83,31 +83,32 @@ private:
   // | 	"new" Identifier "(" ")"
   // | 	"!" Expression
   // | 	"(" Expression ")"
-  Expression* ParseExpression();
-  Expression* ParseAlpha(Expression* LHS);
+  shared_ptr<Expression> ParseExpression();
+  shared_ptr<Expression> ParseAlpha(shared_ptr<Expression> LHS);
   // Parse binary operations using Operator-Precedence Parsing
-  BinOpExpression* ParseBinOpExpression(int ExpPerc, Expression* LHS);
+  shared_ptr<BinOpExpression> ParseBinOpExpression(int ExpPerc,
+                                                   shared_ptr<Expression> LHS);
   int GetPercedence(TOK op);
-  ArrayLookup* ParseArrayLookup(Expression* LHS);
-  Expression* ParseDotHelper(Expression* LHS);
-  ArrayLength* ParseArrayLength(Expression* LHS);
-  Call* ParseCallExpression(Expression* LHS);
+  shared_ptr<ArrayLookup> ParseArrayLookup(shared_ptr<Expression> LHS);
+  shared_ptr<Expression> ParseDotHelper(shared_ptr<Expression> LHS);
+  shared_ptr<ArrayLength> ParseArrayLength(shared_ptr<Expression> LHS);
+  shared_ptr<Call> ParseCallExpression(shared_ptr<Expression> LHS);
 
-  Expression* ParseBeta();
-  IntegerLiteral* ParseIntLit();
-  True* ParseTrue();
-  False* ParseFalse();
-  IdentifierExp* ParseIdExp();
-  NewArray* ParseNewArray();
-  NewObject* ParseNewObject();
-  Not* ParseNot();
-  Expression* ParseParenExpr();
-  Expression* ParseNewHelper();
-  This* ParseThis();
+  shared_ptr<Expression> ParseBeta();
+  shared_ptr<IntegerLiteral> ParseIntLit();
+  shared_ptr<True> ParseTrue();
+  shared_ptr<False> ParseFalse();
+  shared_ptr<IdentifierExp> ParseIdExp();
+  shared_ptr<NewArray> ParseNewArray();
+  shared_ptr<NewObject> ParseNewObject();
+  shared_ptr<Not> ParseNot();
+  shared_ptr<Expression> ParseParenExpr();
+  shared_ptr<Expression> ParseNewHelper();
+  shared_ptr<This> ParseThis();
 
-  Expression* ParseGoodExpression(Expression* LHS);
+  shared_ptr<Expression> ParseGoodExpression(shared_ptr<Expression> LHS);
 
-  Identifier* ParseIdentifier();
+  shared_ptr<Identifier> ParseIdentifier();
 
   // Here we define some helper functions
   // to help us decide which grammer production

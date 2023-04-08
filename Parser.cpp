@@ -8,18 +8,18 @@ vector<pair<string, string>> Parser::getOrder() const {
   return OrderEdge;
 }
 
-Identifier* Parser::ParseIdentifier() {
+shared_ptr<Identifier> Parser::ParseIdentifier() {
   if(l.getCurrentToken() != ID && l.getCurrentToken() != MAIN) {
     err.emit(l.getLocation(), "expected identifier");
     return nullptr;
   }
   string IdName = l.getIdToken();
   l.getNextToken(); // eat ID
-  return new Identifier(IdName, l.getLocation());
+  return make_shared<Identifier>(IdName, l.getLocation());
 }
 
-Type* Parser::ParseType() {
-  Type* re = nullptr;
+shared_ptr<Type> Parser::ParseType() {
+  shared_ptr<Type> re;
   switch(l.getCurrentToken()) {
     case INT:
       re = ParseTypeHelper();
@@ -38,28 +38,28 @@ Type* Parser::ParseType() {
   return re;
 }
 
-IdentifierType* Parser::ParseIdType() {
+shared_ptr<IdentifierType> Parser::ParseIdType() {
   string IdName = l.getIdToken();
   l.eat(ID, "type name");
-  return new IdentifierType(IdName, l.getLocation());
+  return make_shared<IdentifierType>(IdName, l.getLocation());
 }
 
-Type* Parser::ParseTypeHelper() {
+shared_ptr<Type> Parser::ParseTypeHelper() {
   l.eat(INT, "int");
   if(l.getCurrentToken() != L_SBRACKET) {
-    return new IntType(l.getLocation());
+    return make_shared<IntType>(l.getLocation());
   }
   l.eat(L_SBRACKET, "[");
   l.eat(R_SBRACKET, "]");
-  return new ArrayType(l.getLocation());
+  return make_shared<ArrayType>(l.getLocation());
 }
 
-BoolType* Parser::ParseBoolType() {
+shared_ptr<BoolType> Parser::ParseBoolType() {
   l.eat(BOOL, "boolean");
-  return new BoolType(l.getLocation());
+  return make_shared<BoolType>(l.getLocation());
 }
 
-VarDecl* Parser::ParseVarDecl() {
+shared_ptr<VarDecl> Parser::ParseVarDecl() {
   auto t = ParseType();
   if(!t) {
     return nullptr;
@@ -72,11 +72,11 @@ VarDecl* Parser::ParseVarDecl() {
     return nullptr;
   }
   l.eat(S_COLON, ";");
-  return new VarDecl(t, *i, l.getLocation());
+  return make_shared<VarDecl>(t, *i, l.getLocation());
 }
 
 
-Program* Parser::ParseProgram() {
+shared_ptr<Program> Parser::ParseProgram() {
   l.getNextToken();
   if(!IsClassStart(l.getCurrentToken())) {
     cerr << "syntax error...\nPlease create a class for your project"
@@ -104,10 +104,10 @@ Program* Parser::ParseProgram() {
     err.emit(l.getLocation(), "You can only define classes here");
     err.failure();
   }
-  return new Program(*m, cl, l.getLocation());
+  return make_shared<Program>(*m, cl, l.getLocation());
 }
 
-MainClass* Parser::ParseMainClass() {
+shared_ptr<MainClass> Parser::ParseMainClass() {
   // class class_name{ public static void main(string [] a) {statement}}
   l.eat(CLASS, "class");
   auto c = ParseIdentifier();
@@ -129,10 +129,10 @@ MainClass* Parser::ParseMainClass() {
   }
   l.eat(R_BRACKET, "}");
   l.eat(R_BRACKET, "}");
-  return new MainClass(*c, *a, s, l.getLocation());
+  return make_shared<MainClass>(*c, *a, s, l.getLocation());
 }
 
-ClassDecl* Parser::ParseClassDecl() {
+shared_ptr<ClassDecl> Parser::ParseClassDecl() {
   // "class" Identifier ( "extends" Identifier )?
   //    "{" ( VarDeclaration )* ( MethodDeclaration )* "}"
   l.eat(CLASS, "class");
@@ -140,7 +140,7 @@ ClassDecl* Parser::ParseClassDecl() {
   if(!i) {
     return nullptr;
   }
-  Identifier* j = nullptr;
+  shared_ptr<Identifier> j = nullptr;
   if(l.getCurrentToken() == EXTENDS) {
     l.eat(EXTENDS, "extends");
     j = ParseIdentifier();
@@ -189,14 +189,14 @@ ClassDecl* Parser::ParseClassDecl() {
   if(j) {
     edges.push_back({i->s, j->s});
     OrderEdge.push_back({j->s, i->s});
-    return new ClassDeclExtends(*i, vl, ml, *j, l.getLocation());
+    return make_shared<ClassDeclExtends>(*i, vl, ml, *j, l.getLocation());
   }
   OrderEdge.push_back({i->s, ""});
   edges.push_back({i->s, ""});
-  return new ClassDeclSimple(*i, vl, ml, l.getLocation());
+  return make_shared<ClassDeclSimple>(*i, vl, ml, l.getLocation());
 }
 
-Argument* Parser::ParseArgument() {
+shared_ptr<Argument> Parser::ParseArgument() {
   // Type Identifier
   auto t = ParseType();
   if(!t) {
@@ -206,10 +206,10 @@ Argument* Parser::ParseArgument() {
   if(!i) {
     return nullptr;
   }
-  return new Argument(t, *i, l.getLocation());
+  return make_shared<Argument>(t, *i, l.getLocation());
 }
 
-MethodDecl* Parser::ParseMethodDecl() {
+shared_ptr<MethodDecl> Parser::ParseMethodDecl() {
   // "public" Type Identifier
   // "(" ( Type Identifier ( "," Type Identifier )* )? ")"
   // "{" ( VarDeclaration )* ( Statement )* "return" Expression ";" "}"
@@ -225,7 +225,7 @@ MethodDecl* Parser::ParseMethodDecl() {
   l.eat(L_PAREN, "(");
   ArgList al;
   if(l.getCurrentToken() != R_PAREN) {
-    Argument* a = nullptr;
+    shared_ptr<Argument> a ;
     while(IsVarStart(l.getCurrentToken())) {
       a = ParseArgument();
       if(a) {
@@ -275,10 +275,11 @@ MethodDecl* Parser::ParseMethodDecl() {
   auto e = ParseExpression();
   l.eat(S_COLON, ";");
   l.eat(R_BRACKET, "}");
-  return new MethodDecl(t, *i, al, vl, sl, e, l.getLocation());
+  shared_ptr<MethodDecl> x = make_shared<MethodDecl>(t, *i, al, vl, sl, e, l.getLocation());
+  return x;
 }
 
-If* Parser::ParseIf() {
+shared_ptr<If> Parser::ParseIf() {
   // "if" "(" Expression ")" Statement "else" Statement
   l.eat(IF, "if"); l.eat(L_PAREN, "(");
   auto e = ParseExpression();
@@ -295,10 +296,10 @@ If* Parser::ParseIf() {
   if(!ss) {
     return nullptr;
   }
-  return new If(e, s, ss, l.getLocation());
+  return make_shared<If>(e, s, ss, l.getLocation());
 }
 
-While* Parser::ParseWhile() {
+shared_ptr<While> Parser::ParseWhile() {
   // "while" "(" Expression ")" Statement
   l.eat(WHILE, "while"); l.eat(L_PAREN, "(");
   auto e = ParseExpression();
@@ -310,10 +311,10 @@ While* Parser::ParseWhile() {
   if(!s) {
     return nullptr;
   }
-  return new While(e, s, l.getLocation());
+  return make_shared<While>(e, s, l.getLocation());
 }
 
-Print* Parser::ParsePrint() {
+shared_ptr<Print> Parser::ParsePrint() {
   // "System.out.println" "(" Expression ")" ";"
   l.eat(PRINT, "System.out.println");
   l.eat(L_PAREN, "(");
@@ -323,16 +324,16 @@ Print* Parser::ParsePrint() {
   }
   l.eat(R_PAREN, ")");
   l.eat(S_COLON, ";");
-  return new Print(e, l.getLocation());
+  return make_shared<Print>(e, l.getLocation());
 }
 
-Statement* Parser::ParseStatementHelper() {
+shared_ptr<Statement> Parser::ParseStatementHelper() {
   auto i = ParseIdentifier();
   if(!i) {
     return nullptr;
   }
-  Statement* re = nullptr;
-  Expression* e = nullptr, *ee = nullptr;
+  shared_ptr<Statement> re;
+  shared_ptr<Expression> e, ee;
   switch(l.getCurrentToken()) {
     case ASSIGN:
       l.eat(ASSIGN, "=");
@@ -351,14 +352,14 @@ Statement* Parser::ParseStatementHelper() {
   }
   l.eat(S_COLON, ";");
   if(e && ee) {
-    return new ArrayAssign(*i, e, ee, l.getLocation());
+    return make_shared<ArrayAssign>(*i, e, ee, l.getLocation());
   } else if(e) {
-    return new Assign(*i, e, l.getLocation());
+    return make_shared<Assign>(*i, e, l.getLocation());
   }
   return nullptr;
 }
 
-Block* Parser::ParseBlock() {
+shared_ptr<Block> Parser::ParseBlock() {
   l.eat(L_BRACKET, "{");
   StatementList sl;
   while(IsStatementStart(l.getCurrentToken())) {
@@ -369,11 +370,11 @@ Block* Parser::ParseBlock() {
     sl.add(s);
   }
   l.eat(R_BRACKET, "}");
-  return new Block(sl, l.getLocation());
+  return make_shared<Block>(sl, l.getLocation());
 }
 
-Statement* Parser::ParseStatement() {
-  Statement* re = nullptr;
+shared_ptr<Statement> Parser::ParseStatement() {
+  shared_ptr<Statement> re;
   switch(l.getCurrentToken()) {
     case IF:
       re = ParseIf();
@@ -400,12 +401,12 @@ Statement* Parser::ParseStatement() {
   return re;
 }
 
-Expression* Parser::ParseExpression() {
+shared_ptr<Expression> Parser::ParseExpression() {
   auto LHS = ParseBeta();
   return ParseGoodExpression(LHS);
 }
 
-Expression* Parser::ParseGoodExpression(Expression* LHS) {
+shared_ptr<Expression> Parser::ParseGoodExpression(shared_ptr<Expression> LHS) {
   if(!IsStillGood(l.getCurrentToken())) {
     return LHS;
   }
@@ -413,7 +414,7 @@ Expression* Parser::ParseGoodExpression(Expression* LHS) {
   return ParseGoodExpression(e);
 }
 
-Expression* Parser::ParseAlpha(Expression* LHS) {
+shared_ptr<Expression> Parser::ParseAlpha(shared_ptr<Expression> LHS) {
   TOK tk = l.getCurrentToken();
   if(IsBinOp(tk)) {
     return ParseBinOpExpression(0, LHS);
@@ -443,12 +444,13 @@ int Parser::GetPercedence(TOK op) {
 
 // We parse Binary operation using Operator-precedence parser
 // https://en.wikipedia.org/wiki/Operator-precedence_parser
-BinOpExpression*
-Parser::ParseBinOpExpression(int ExpPrec, Expression* LHS) {
+shared_ptr<BinOpExpression>
+Parser::ParseBinOpExpression(int ExpPrec, shared_ptr<Expression> LHS) {
   while(true) {
     int CurPrec = GetPercedence(l.getCurrentToken());
     if(CurPrec < ExpPrec) {
-      BinOpExpression* lhs(static_cast<BinOpExpression *>(LHS));
+      shared_ptr<BinOpExpression> lhs
+        = static_pointer_cast<BinOpExpression>(LHS);
       return lhs;
     }
     TOK op = l.getCurrentToken();
@@ -461,18 +463,18 @@ Parser::ParseBinOpExpression(int ExpPrec, Expression* LHS) {
         return nullptr;
       }
     }
-    LHS = new BinOpExpression(op, LHS, RHS, l.getLocation());
+    LHS = make_shared<BinOpExpression>(op, LHS, RHS, l.getLocation());
   }
 }
 
-ArrayLookup* Parser::ParseArrayLookup(Expression* LHS) {
+shared_ptr<ArrayLookup> Parser::ParseArrayLookup(shared_ptr<Expression> LHS) {
   l.eat(L_SBRACKET, "[");
   auto e = ParseExpression();
   l.eat(R_SBRACKET, "]");
-  return new ArrayLookup(LHS, e, l.getLocation());
+  return make_shared<ArrayLookup>(LHS, e, l.getLocation());
 }
 
-Expression* Parser::ParseDotHelper(Expression* LHS) {
+shared_ptr<Expression> Parser::ParseDotHelper(shared_ptr<Expression> LHS) {
   l.eat(DOT, ".");
   switch(l.getCurrentToken()) {
     case LENGTH:
@@ -486,12 +488,12 @@ Expression* Parser::ParseDotHelper(Expression* LHS) {
   return nullptr;
 }
 
-ArrayLength* Parser::ParseArrayLength(Expression* LHS) {
+shared_ptr<ArrayLength> Parser::ParseArrayLength(shared_ptr<Expression> LHS) {
   l.eat(LENGTH, "length");
-  return new ArrayLength(LHS, l.getLocation());
+  return make_shared<ArrayLength>(LHS, l.getLocation());
 }
 
-Call* Parser::ParseCallExpression(Expression* LHS) {
+shared_ptr<Call> Parser::ParseCallExpression(shared_ptr<Expression> LHS) {
   auto i = ParseIdentifier();
   if(!i) {
     return nullptr;
@@ -514,10 +516,10 @@ Call* Parser::ParseCallExpression(Expression* LHS) {
     }
     l.eat(R_PAREN, ")");
   }
-  return new Call(LHS, *i, el, l.getLocation());
+  return make_shared<Call>(LHS, *i, el, l.getLocation());
 }
 
-Expression* Parser::ParseBeta() {
+shared_ptr<Expression> Parser::ParseBeta() {
   switch(l.getCurrentToken()) {
     case INTEGER_LITERAL:
       return ParseIntLit();
@@ -542,41 +544,41 @@ Expression* Parser::ParseBeta() {
   return nullptr;
 }
 
-IntegerLiteral* Parser::ParseIntLit() {
+shared_ptr<IntegerLiteral> Parser::ParseIntLit() {
   l.eat(INTEGER_LITERAL, "integer value");
-  return new IntegerLiteral(l.getNumberToken(), l.getLocation());
+  return make_shared<IntegerLiteral>(l.getNumberToken(), l.getLocation());
 }
 
-True* Parser::ParseTrue() {
+shared_ptr<True> Parser::ParseTrue() {
   l.eat(TRUE, "true");
-  return new True(l.getLocation());
+  return make_shared<True>(l.getLocation());
 }
 
-False* Parser::ParseFalse() {
+shared_ptr<False> Parser::ParseFalse() {
   l.eat(FALSE, "false");
-  return new False(l.getLocation());
+  return make_shared<False>(l.getLocation());
 }
 
-IdentifierExp* Parser::ParseIdExp() {
+shared_ptr<IdentifierExp> Parser::ParseIdExp() {
   auto i = ParseIdentifier();
-  return new IdentifierExp(i->s, l.getLocation());
+  return make_shared<IdentifierExp>(i->s, l.getLocation());
 }
 
-This* Parser::ParseThis() {
+shared_ptr<This> Parser::ParseThis() {
   l.eat(THIS, "this");
-  return new This(l.getLocation());
+  return make_shared<This>(l.getLocation());
 }
 
-Expression* Parser::ParseParenExpr() {
+shared_ptr<Expression> Parser::ParseParenExpr() {
   l.eat(L_PAREN, "(");
   auto e = ParseExpression();
   l.eat(R_PAREN, ")");
   return e;
 }
 
-Expression* Parser::ParseNewHelper() {
+shared_ptr<Expression> Parser::ParseNewHelper() {
   l.eat(NEW, "new");
-  Expression* re = nullptr;
+  shared_ptr<Expression> re;
   switch(l.getCurrentToken()) {
     case INT:
       re = ParseNewArray();
@@ -591,28 +593,28 @@ Expression* Parser::ParseNewHelper() {
   return re;
 }
 
-NewArray* Parser::ParseNewArray() {
+shared_ptr<NewArray> Parser::ParseNewArray() {
   l.eat(INT, "int");
   l.eat(L_SBRACKET, "[");
   auto e = ParseExpression();
   l.eat(R_SBRACKET, "]");
-  return new NewArray(e, l.getLocation());
+  return make_shared<NewArray>(e, l.getLocation());
 }
 
-NewObject* Parser::ParseNewObject() {
+shared_ptr<NewObject> Parser::ParseNewObject() {
   auto i = ParseIdentifier();
   l.eat(L_PAREN, "(");
   l.eat(R_PAREN, ")");
-  return new NewObject(*i, l.getLocation());
+  return make_shared<NewObject>(*i, l.getLocation());
 }
 
-Not* Parser::ParseNot() {
+shared_ptr<Not> Parser::ParseNot() {
   l.eat(NOT, "!");
   auto e = ParseExpression();
-  return new Not(e, l.getLocation());
+  return make_shared<Not>(e, l.getLocation());
 }
 
-Program* Parser::parse() {
+shared_ptr<Program> Parser::parse() {
   freopen(l.getLocation().file.c_str(), "r", stdin);
   auto re = ParseProgram();
   fclose(stdin);

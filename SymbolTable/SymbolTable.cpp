@@ -12,40 +12,40 @@ SymbolTable::SymbolTable(const SymbolTable &st) {
   parent = st.getParent();
 }
 
-void SymbolTable::addClass(ClassSymbol* cs) {
+void SymbolTable::addClass(shared_ptr<ClassSymbol> cs) {
   classTable[cs->getName()] = cs;
 }
 
-void SymbolTable::addMethod(MethodSymbol* ms) {
+void SymbolTable::addMethod(shared_ptr<MethodSymbol> ms) {
   methodTable[ms->getName()] = ms;
 }
 
-void SymbolTable::addVar(VarSymbol* vs) {
+void SymbolTable::addVar(shared_ptr<VarSymbol> vs) {
   varTable[vs->getName()] = vs;
 }
 
-SymbolTable* SymbolTable::enterScope(string name) {
+shared_ptr<SymbolTable> SymbolTable::enterScope(string name) {
   if(ScopeTable.count(name)) {
-    return this;
+    return shared_from_this();
   }
-  SymbolTable *st = new SymbolTable(*this);
+  shared_ptr<SymbolTable> st = make_shared<SymbolTable>(*this);
   this->addScopeTableEntry(name, st);
   return st;
 }
 
-SymbolTable* SymbolTable::getScope(string name) {
-  SymbolTable* SymTab = this->getSymbolTable(name);
+shared_ptr<SymbolTable> SymbolTable::getScope(string name) {
+  shared_ptr<SymbolTable> SymTab = this->getSymbolTable(name);
   if(SymTab != nullptr) {
     return SymTab;
   }
-  return this;
+  return shared_from_this();
 }
 
-SymbolTable* SymbolTable::exitScope() {
+shared_ptr<SymbolTable> SymbolTable::exitScope() {
   return this->getParent();
 }
 
-Symbol* SymbolTable::symbolLookupHelper(string s) {
+shared_ptr<Symbol> SymbolTable::symbolLookupHelper(string s) {
   if(classTable.count(s) ) {
     return classTable[s];
   }
@@ -58,10 +58,10 @@ Symbol* SymbolTable::symbolLookupHelper(string s) {
   return nullptr;
 }
 
-Symbol* SymbolTable::symbolLookup(string s) {
-  SymbolTable *st = this;
+shared_ptr<Symbol> SymbolTable::symbolLookup(string s) {
+  auto st = shared_from_this();
   while(st != nullptr) {
-    Symbol* sym = symbolLookupHelper(s);
+    shared_ptr<Symbol> sym = symbolLookupHelper(s);
     if(sym != nullptr) {
       return sym;
     }
@@ -70,47 +70,47 @@ Symbol* SymbolTable::symbolLookup(string s) {
   return nullptr;
 }
 
-ClassSymbol* SymbolTable::classLookup(string s) {
+shared_ptr<ClassSymbol> SymbolTable::classLookup(string s) {
   return classTable.count(s) ? classTable[s] : nullptr;
 }
 
-MethodSymbol* SymbolTable::methodLookup(string s) {
+shared_ptr<MethodSymbol> SymbolTable::methodLookup(string s) {
   return methodTable.count(s) ? methodTable[s] : nullptr;
 }
 
-VarSymbol* SymbolTable::varLookup(string s) {
+shared_ptr<VarSymbol> SymbolTable::varLookup(string s) {
   return varTable.count(s) ? varTable[s] : nullptr;
 }
 
-map<string, VarSymbol*> SymbolTable::getVarTable() const {
+map<string, shared_ptr<VarSymbol>> SymbolTable::getVarTable() const {
   return varTable;
 }
 
-map<string, MethodSymbol*> SymbolTable::getMethodTable() const {
+map<string, shared_ptr<MethodSymbol>> SymbolTable::getMethodTable() const {
   return methodTable;
 }
 
-map<string, ClassSymbol*> SymbolTable::getClassTable() const {
+map<string, shared_ptr<ClassSymbol>> SymbolTable::getClassTable() const {
   return classTable;
 }
 
-SymbolTable* SymbolTable::getParent() const {
+shared_ptr<SymbolTable> SymbolTable::getParent() const {
   return parent;
 }
 
-void SymbolTable::setParent(SymbolTable* st) {
+void SymbolTable::setParent(shared_ptr<SymbolTable> st) {
   this->parent = st;
 }
 
-map<string, SymbolTable*> SymbolTable::getScopeTable() const {
+map<string, shared_ptr<SymbolTable>> SymbolTable::getScopeTable() const {
   return ScopeTable;
 }
 
-void SymbolTable::addScopeTableEntry(string s, SymbolTable* st) {
+void SymbolTable::addScopeTableEntry(string s, shared_ptr<SymbolTable> st) {
   ScopeTable[s] = st;
-  st->parent = this;
+  st->parent = shared_from_this();
 }
 
-SymbolTable* SymbolTable::getSymbolTable(string s) {
+shared_ptr<SymbolTable> SymbolTable::getSymbolTable(string s) {
   return ScopeTable[s];
 }

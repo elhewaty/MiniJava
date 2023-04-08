@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 
 using namespace std;
 
@@ -43,12 +44,12 @@ public:
   virtual bool operator==(const Symbol& other) const override;
   virtual bool operator!=(const Symbol& other) const override;
   virtual string stringize() const override;
-  vector<VarSymbol*> getParameters() const;
-  void addParameter(VarSymbol* s);
-  void addLocal(VarSymbol* s);
-  bool varExists(VarSymbol* s) const;
+  vector<shared_ptr<VarSymbol>> getParameters() const;
+  void addParameter(shared_ptr<VarSymbol> s);
+  void addLocal(shared_ptr<VarSymbol> s);
+  bool varExists(shared_ptr<VarSymbol> s) const;
 private:
-  vector<VarSymbol*> parameters;
+  vector<shared_ptr<VarSymbol>> parameters;
   map<string, bool> locals;
 };
 
@@ -59,19 +60,19 @@ public:
   virtual bool operator==(const Symbol& other) const override;
   virtual bool operator!=(const Symbol& other) const override;
   virtual string stringize() const override;
-  vector<MethodSymbol*> getMethods() const;
-  vector<VarSymbol*> getVariables() const;
-  void addMethod(MethodSymbol* ms);
-  void addVariable(VarSymbol* vs);
-  void addVarInExtClass(VarSymbol* vs);
-  MethodSymbol* getMethod(string s) const;
+  vector<shared_ptr<MethodSymbol>> getMethods() const;
+  vector<shared_ptr<VarSymbol>> getVariables() const;
+  void addMethod(shared_ptr<MethodSymbol> ms);
+  void addVariable(shared_ptr<VarSymbol> vs);
+  void addVarInExtClass(shared_ptr<VarSymbol> vs);
+  shared_ptr<MethodSymbol> getMethod(string s) const;
   // This function adds the Symbols in parent class to the child classs.
-  void parentClass(ClassSymbol* cs);
-  void replaceMethod(MethodSymbol* ms);
+  void parentClass(shared_ptr<ClassSymbol> cs);
+  void replaceMethod(shared_ptr<MethodSymbol> ms);
 
 private:
-  vector<MethodSymbol*> methods;
-  vector<VarSymbol*> vars;
+  vector<shared_ptr<MethodSymbol>> methods;
+  vector<shared_ptr<VarSymbol>> vars;
 };
 
 #endif

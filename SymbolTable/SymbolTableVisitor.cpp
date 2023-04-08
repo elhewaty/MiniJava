@@ -1,17 +1,17 @@
 #include "SymbolTableVisitor.h"
 
-SymbolTable* SymbolTableVisitor::getSymbolTable() const {
+shared_ptr<SymbolTable> SymbolTableVisitor::getSymbolTable() const {
   return SymTable;
 }
 
 // Mainclass m
 // ClassDeclList cl
 void SymbolTableVisitor::visit(Program* n) {
-  map<string, ClassDecl*>m;
+  map<string, shared_ptr<ClassDecl>>m;
   mainClassName = n->m.i.s;
   for(int i = 0; i < n->cl.size(); i++) {
     string s = "", t = "";
-    auto c = dynamic_cast<ClassDeclSimple*>(n->cl.at(i));
+    auto c = dynamic_pointer_cast<ClassDeclSimple>(n->cl.at(i));
     if(c) {
       if(c->i.s == "") {
         continue;
@@ -19,7 +19,7 @@ void SymbolTableVisitor::visit(Program* n) {
       s = c->i.s;
       m[c->i.s] = n->cl.at(i);
     } else {
-      auto c = dynamic_cast<ClassDeclExtends*>(n->cl.at(i));
+      auto c = dynamic_pointer_cast<ClassDeclExtends>(n->cl.at(i));
       if(c->i.s == "") {
         continue;
       }
@@ -30,10 +30,10 @@ void SymbolTableVisitor::visit(Program* n) {
     if(s == "") {
       continue;
     }
-    SymTable->addClass(new ClassSymbol(s, t));
+    SymTable->addClass(make_shared<ClassSymbol>(s, t));
     exist[s] = 1;
   }
-  vector<ClassDecl*> cl;
+  vector<shared_ptr<ClassDecl>> cl;
   for(auto u : ord) {
     cl.push_back(m[u]);
   }
@@ -48,16 +48,16 @@ void SymbolTableVisitor::visit(Program* n) {
 
 // main function
 void SymbolTableVisitor::visit(MainClass* n) {
-  ClassSymbol *ClSym = new ClassSymbol(n->i.s, "");
+  shared_ptr<ClassSymbol>ClSym = make_shared<ClassSymbol>(n->i.s, "");
   SymTable->addClass(ClSym);
   // Enter class Scope
   SymTable = SymTable->enterScope(n->i.s);
-  MethodSymbol* MethSym = new MethodSymbol("main", "void");
+  shared_ptr<MethodSymbol> MethSym = make_shared<MethodSymbol>("main", "void");
   // Enter main function scope
   SymTable = SymTable->enterScope("main");
   CurMeth.push(MethSym);
   SymTable->addMethod(MethSym);
-  VarSymbol* VarSym = new VarSymbol(n->j.s, "String[]");
+  shared_ptr<VarSymbol> VarSym = make_shared<VarSymbol>(n->j.s, "String[]");
   MethSym->addParameter(VarSym);
   SymTable->addVar(VarSym);
   n->s->accept(*this);
@@ -75,7 +75,7 @@ void SymbolTableVisitor::visit(ClassDeclSimple* n) {
   if(n->i.s == mainClassName) {
     err.emit(n->i.getLocation(), "class has the same name as the main class");
   }
-  ClassSymbol* ClSym = new ClassSymbol(n->i.s, "");
+  shared_ptr<ClassSymbol> ClSym = make_shared<ClassSymbol>(n->i.s, "");
   SymTable->addClass(ClSym);
   // Enter the class scope
   SymTable = SymTable->enterScope(n->i.s);
@@ -83,15 +83,15 @@ void SymbolTableVisitor::visit(ClassDeclSimple* n) {
   for(int i = 0; i < (int)n->vl.size(); i++) {
     n->vl.at(i).accept(*this);
     // Add the Variable
-    VarSymbol* sym = SymTable->getVarTable()[n->vl.at(i).i.s];
+    auto sym = SymTable->getVarTable()[n->vl.at(i).i.s];
     if(sym != nullptr) {
-      ClSym->addVariable((VarSymbol*)sym);
+      ClSym->addVariable(sym);
     }
   }
   // Collect member functions information
   for(int i = 0; i < (int)n->ml.size(); i++) {
     n->ml.at(i).accept(*this);
-    MethodSymbol* sym = SymTable->getMethodTable()[n->ml.at(i).i.s];
+    auto sym = SymTable->getMethodTable()[n->ml.at(i).i.s];
     if(sym != nullptr) {
       ClSym->addMethod(sym);
     }
@@ -107,15 +107,15 @@ void SymbolTableVisitor::visit(ClassDeclExtends* n) {
   if(n->i.s == mainClassName) {
     err.emit(n->i.getLocation(), "class has the same name as the main class");
   }
-  ClassSymbol* ClSym = new ClassSymbol(n->i.s, n->j.s);
+  shared_ptr<ClassSymbol> ClSym = make_shared<ClassSymbol>(n->i.s, n->j.s);
   if(n->j.s == mainClassName) {
     err.emit(n->i.getLocation(), "Main class can not be extended");
   }
   SymTable->addClass(ClSym);
   // Add inherited members
-  SymbolTable* extScope = SymTable->getSymbolTable(n->j.s);
+  auto extScope = SymTable->getSymbolTable(n->j.s);
   if(extScope != nullptr) {
-    ClassSymbol* sym = extScope->classLookup(n->j.s);
+    auto sym = extScope->classLookup(n->j.s);
     if(sym != nullptr) {
       ClSym->parentClass(sym);
     }
@@ -151,7 +151,7 @@ void SymbolTableVisitor::visit(ClassDeclExtends* n) {
     if(MethSym != nullptr) {
       // If the function is extended.
       // Check if the function is overridden.
-      MethodSymbol* MethSymExt = ClSym->getMethod(MethSym->getName());
+      auto MethSymExt = ClSym->getMethod(MethSym->getName());
       if(MethSymExt != nullptr &&
 	MethSymExt->stringize() != MethSym->stringize()) {
 	cerr << BOLDRED << "Error:" << RESET
@@ -190,7 +190,7 @@ void SymbolTableVisitor::visit(VarDecl* n) {
     }
   }
   bool declared = false;
-  VarSymbol* v = new VarSymbol(n->i.s, t);
+  shared_ptr<VarSymbol> v = make_shared<VarSymbol>(n->i.s, t);
   if(!CurMeth.empty()) {
     declared = CurMeth.top()->varExists(v);
     CurMeth.top()->addLocal(v);
@@ -222,7 +222,8 @@ void SymbolTableVisitor::visit(MethodDecl* n) {
 	     "Method " + sym->getName() + " was declared before.");
     return;
   }
-  MethodSymbol* MethSym = new MethodSymbol(n->i.s, n->t->stringize());
+  shared_ptr<MethodSymbol> MethSym
+    = make_shared<MethodSymbol>(n->i.s, n->t->stringize());
   if(n->al.size() > 6) {
     err.emit(n->getLocation(), "Too many args. Please Pass at most 6 args.");
   }
@@ -230,7 +231,7 @@ void SymbolTableVisitor::visit(MethodDecl* n) {
   SymTable = SymTable->enterScope(MethSym->getName());
   CurMeth.push(MethSym);
   for(int i = 0; i < (int)n->al.size(); i++) {
-    MethSym->addParameter(new VarSymbol(n->al.at(i).i.s,
+    MethSym->addParameter(make_shared<VarSymbol>(n->al.at(i).i.s,
                           n->al.at(i).t->stringize()));
   }
   for(int i = 0; i < (int)n->al.size(); i++) {
@@ -259,7 +260,7 @@ void SymbolTableVisitor::visit(Argument* n) {
       err.failure();
     }
   }
-  VarSymbol* v = new VarSymbol(n->i.s, t);
+  shared_ptr<VarSymbol> v = make_shared<VarSymbol>(n->i.s, t);
   if(!CurMeth.empty()) {
     declared = CurMeth.top()->varExists(v);
     CurMeth.top()->addLocal(v);

@@ -9,9 +9,9 @@
 
 class SymbolTableVisitor final : public Visitor {
 public:
-  SymbolTableVisitor() : SymTable(new SymbolTable()) {}
-  SymbolTableVisitor(vector<string>v) : ord(v), SymTable(new SymbolTable()) {}
-  ~SymbolTableVisitor() { delete SymTable; }
+  SymbolTableVisitor() : SymTable(make_shared<SymbolTable>()) {}
+  SymbolTableVisitor(vector<string>v) : ord(v),
+    SymTable(make_shared<SymbolTable>()) {}
   virtual void visit(Program* n) override;
   virtual void visit(MainClass* n) override;
   virtual void visit(ClassDeclSimple* n) override;
@@ -42,12 +42,12 @@ public:
   virtual void visit(NewObject* n) override;
   virtual void visit(Not* n) override;
   virtual void visit(Identifier* n) override;
-  SymbolTable* getSymbolTable() const;
+  shared_ptr<SymbolTable> getSymbolTable() const;
 
 private:
-  SymbolTable* SymTable;
+  shared_ptr<SymbolTable> SymTable;
   ErrorHandling err;
-  stack<MethodSymbol*> CurMeth;
+  stack<shared_ptr<MethodSymbol>> CurMeth;
   vector<string> ord;
   map<string, bool> exist;
   string mainClassName;

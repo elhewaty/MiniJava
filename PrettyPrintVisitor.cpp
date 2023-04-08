@@ -202,25 +202,25 @@ void PrettyPrintVisitor::visit(If* n) {
     n->e->accept(*this);
   }
   std::cout << ") ";
-  if(!dynamic_cast<Block*>(n->s1)) {
+  if(!dynamic_cast<Block*>(n->s1.get())) {
     std::cout << std::endl;
     incTabs();
   }
   if(n->s1) {
     n->s1->accept(*this);
-    if(!dynamic_cast<Block*>(n->s1)) {
+    if(!dynamic_cast<Block*>(n->s1.get())) {
       decTabs();
     }
   }
   printTabs();
   std::cout << "else ";
   if(n->s2) {
-    if(!dynamic_cast<Block*>(n->s2)) {
+    if(!dynamic_cast<Block*>(n->s2.get())) {
       std::cout << std::endl;
       incTabs();
     }
     n->s2->accept(*this);
-    if(!dynamic_cast<Block*>(n->s2)) {
+    if(!dynamic_cast<Block*>(n->s2.get())) {
       decTabs();
     }
   }

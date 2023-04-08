@@ -5,36 +5,36 @@
 #include <map>
 #include <stack>
 
-class SymbolTable {
+class SymbolTable : public enable_shared_from_this<SymbolTable> {
 public:
   SymbolTable();
   SymbolTable(const SymbolTable &);
-  void addClass(ClassSymbol*);
-  void addMethod(MethodSymbol*);
-  void addVar(VarSymbol*);
-  SymbolTable* enterScope(string);
-  SymbolTable* getScope(string);
-  SymbolTable* exitScope();
-  Symbol* symbolLookup(string);
-  ClassSymbol* classLookup(string);
-  MethodSymbol* methodLookup(string);
-  VarSymbol* varLookup(string);
-  map<string, VarSymbol*> getVarTable() const;
-  map<string, MethodSymbol*> getMethodTable() const;
-  map<string, ClassSymbol*> getClassTable() const;
-  map<string, SymbolTable*> getScopeTable() const;
-  SymbolTable* getSymbolTable(string);
-  SymbolTable* getParent() const;
+  void addClass(shared_ptr<ClassSymbol>);
+  void addMethod(shared_ptr<MethodSymbol>);
+  void addVar(shared_ptr<VarSymbol>);
+  shared_ptr<SymbolTable> enterScope(string);
+  shared_ptr<SymbolTable> getScope(string);
+  shared_ptr<SymbolTable> exitScope();
+  shared_ptr<Symbol> symbolLookup(string);
+  shared_ptr<ClassSymbol> classLookup(string);
+  shared_ptr<MethodSymbol> methodLookup(string);
+  shared_ptr<VarSymbol> varLookup(string);
+  map<string, shared_ptr<VarSymbol>> getVarTable() const;
+  map<string, shared_ptr<MethodSymbol>> getMethodTable() const;
+  map<string, shared_ptr<ClassSymbol>> getClassTable() const;
+  map<string, shared_ptr<SymbolTable>> getScopeTable() const;
+  shared_ptr<SymbolTable> getSymbolTable(string);
+  shared_ptr<SymbolTable> getParent() const;
 
 private:
-  map<string, SymbolTable*> ScopeTable;
-  map<string, VarSymbol*> varTable;
-  map<string, MethodSymbol*> methodTable;
-  map<string, ClassSymbol*> classTable;
-  SymbolTable* parent = nullptr;
-  Symbol* symbolLookupHelper(string);
-  void addScopeTableEntry(string, SymbolTable*);
-  void setParent(SymbolTable*);
+  map<string, shared_ptr<SymbolTable>> ScopeTable;
+  map<string, shared_ptr<VarSymbol>> varTable;
+  map<string, shared_ptr<MethodSymbol>> methodTable;
+  map<string, shared_ptr<ClassSymbol>> classTable;
+  shared_ptr<SymbolTable> parent;
+  shared_ptr<Symbol> symbolLookupHelper(string);
+  void addScopeTableEntry(string, shared_ptr<SymbolTable>);
+  void setParent(shared_ptr<SymbolTable>);
 };
 
 #endif
