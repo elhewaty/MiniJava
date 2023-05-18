@@ -25,8 +25,8 @@ if we have `x + y * z` it becomes `(x + (y * z))`.
 * `-T` to run the type checker.
 * `-C` to run the Code Generator, you will get a file called demo.s</br>
 under `runtime/` this has the assembly code for your program.</br>
-* After Generatin the assembly code you can get the executable of your program</br>
-by executing `make run`
+* After Generatin the assembly code you can get the executable of your program
+</br>by executing `make run`
 # Motivation
 This is a side-project I totally built myself. The project</br>
 is for educational purposes. I studied compiler theories, and</br>
