@@ -378,8 +378,8 @@ void CodeGenVisitor::visit(ArrayAssign *n) {
   // index in %rbx
   popq("%rbx");
   // value in `%rax` ---> from n->e2->accept(*this)
-  // movq %rax, 16(%r13, %rbx, 8)
-  genBin("movq", "%r11", "16(%r13, %rbx, 8)");
+  // movq %r11, 8(%r13, %rbx, 8) 
+  genBin("movq", "%r11", "8(%r13, %rbx, 8)");
 }
 
 void CodeGenVisitor::visit(ArrayLookup *n) {
@@ -392,7 +392,7 @@ void CodeGenVisitor::visit(ArrayLookup *n) {
   // to get an element M[base + idx * 8 + 8]
   // it should be M[base + idx * 8], but the first 8 bytes
   // of the array contain the array length
-  genBin("movq", "16(%rbx, %rax, 8)", "%rax");
+  genBin("movq", "8(%rbx, %rax, 8)", "%rax");
 }
 
 void CodeGenVisitor::visit(ArrayLength *n) {
@@ -507,17 +507,16 @@ void CodeGenVisitor::visit(NewArray *n) {
   n->e->accept(*this);
   // push the size of the array in the stack
   pushq("%rax");
+  // the first slot for the array length
+  genBin("addq", "$1", "%rax");
   // multiply by 8
   gen("imulq $8, %rax");
-  // the first slot for the array length
-  genBin("addq", "$16", "%rax");
   // allocate memory
   gen("movq %rax, %rdi");
   gen("call mjcalloc");
   // we have a pointer to the allocated memory in %rax
   // put the size as the first element
   popq("0(%rax)");
-  genBin("movq", "$16", "8(%rax)");
 }
 
 void CodeGenVisitor::visit(NewObject *n) {
