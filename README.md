@@ -1,5 +1,5 @@
 # MiniJava
-MiniJava is a subset of Java. It's a simple language for educational purposes.</br>
+[MiniJava](https://www.cambridge.org/resources/052182060X/) is a subset of Java. It's a simple language for educational purposes.</br>
 Here is the [grammar](http://www.cs.tufts.edu/~sguyer/classes/comp181-2006/minijava.html) that I used to build the compiler. The Compiler in this repo is MiniJava to X64_86.</br>
 **THIS COMPILER IS FULLY HAND WRITTEN. NO TOOLS WERE USED.**
 
@@ -12,10 +12,10 @@ AST Building: finished.
 Type Checker has to passes:
   Symbol Table building: finished.
   Checking phase by consulting symbol table: finished.
-Code Generator: Not yet.
+Code Generator: finished.
 ```
 # Build and Run
-`$ make`
+`$ make` to build `MiniJava` from the source you will get `MiniJava` executable</br>
 run `./MiniJava` with `-h` flag to see the help list.</br>
 You can Run with the following flags:</br>
 * `-h` to show the help list.
@@ -23,11 +23,16 @@ You can Run with the following flags:</br>
 * `-P` to see the program from the `Parser` prospective for example:</br>
 if we have `x + y * z` it becomes `(x + (y * z))`.
 * `-T` to run the type checker.
-* I will add more flags for every finished phase.
+* `-C` to run the Code Generator, you will get a file called demo.s</br>
+under `runtime/` this has the assembly code for your program.</br>
+* After Generatin the assembly code you can get the executable of your program</br>
+by executing `make run`
 # Motivation
 This is a side-project I totally built myself. The project</br>
 is for educational purposes. I studied compiler theories, and</br>
 I wanted to implement the theories I learned.
+# Acknowledgement
+I realy thank **University of Washington** for making [**CSE P 501**](https://courses.cs.washington.edu/courses/csep501/18sp/) Open source. This course is a great help and helped me a lot.</br>
 # What you should know
 To understand the code, you don't have to know Compilers' theories.</br>
 But here are some highlights, that might help:
@@ -171,3 +176,25 @@ consults the symbol table about variables and classes, e.g:</br>
 You can find The Symentic Phase code in:
 `SymbolTable/`, `TypeCheckerVisitor.h`, `TypeCheckerVisitor.cpp`,</br>
 and `TypeVisitor.h`
+## Code Generation
+This phase was the most difficult although it seems easy, but the generated</br>
+code had many `Segmentaion fault` errors most of them was because of `stack alignment`.</br>
+The technique used here is so simple **traverse** the AST in execution order</br>
+and emit the code in visitor methods.</br>
+**One strategy that made the implementation easy is to treat X86 as a 1-register</br>
+language with a stack for intermediate values** all operations writes `%rax` register</br>
+The code however uses other register for some operations but not much.</br>
+function calls was a little bit trickt to implement but the code uses **O(1) dynamic dispatch**.</br>
+you can find the code in `CodeGeneratorVistor.h` and `CodeGeneratorVisitor.cpp`
+## Language Runtime
+The MiniJava program should have runtime environment e.g space for heap, and stack, </br>
+`%rsp` and the other registers should have correct initial values, and a way </br>
+to allocate memory for objects, and arrays.</br>
+## Bootstrapping
+We use the existing `C` runtime, under directory `runtime/` you will find</br>
+a `C` program `boot.c`. This program calls the MiniJava main function</br>
+as if it were a `C` function. By using this technique, it's possible</br>
+to call standard `C` functions, and the program will now use the `C` ennvironment.
+# Copyrights
+I wrote All files in this project except `runtime`, and `SamplePrograms`</br>
+they are from `CSE P 501` starter code, however you can use this code freely.</br>
