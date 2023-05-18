@@ -5,7 +5,7 @@
 #include "Visitor.h"
 #include <iostream>
 
-class PrettyPrintVisitor final : public Visitor{
+class PrettyPrintVisitor final : public Visitor {
 public:
   void printTabs() const;
   void incTabs() { tabs++; }

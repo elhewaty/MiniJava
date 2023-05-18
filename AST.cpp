@@ -1,6 +1,7 @@
 #include "PrettyPrintVisitor.h"
 #include "SymbolTable/SymbolTableVisitor.h"
 #include "TypeCheckerVisitor.h"
+#include "CodeGenVisitor.h"
 
 void Program::accept(Visitor& v) {
   v.visit(this);

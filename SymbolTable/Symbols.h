@@ -17,17 +17,22 @@ using namespace std;
 // then it does't have a type. If it's a sub class, it's type is
 // the parent class.
 
-class Symbol {
+class Symbol : public enable_shared_from_this<Symbol> {
 public:
   Symbol(string name, string type);
   string getName() const;
   string getType() const;
+  void setParent(shared_ptr<Symbol> s) { parent = s; }
+  shared_ptr<Symbol> getParent() const { return parent; }
   virtual bool operator==(const Symbol& other) const = 0;
   virtual bool operator!=(const Symbol& other) const = 0;
   virtual string stringize() const = 0;
 private:
   string name;
   string type;
+  // We need this to know where exactly the symbol is defined
+  // e.g, the parent class of the method
+  shared_ptr<Symbol> parent;
 };
 
 class VarSymbol : public Symbol {
@@ -69,6 +74,7 @@ public:
   // This function adds the Symbols in parent class to the child classs.
   void parentClass(shared_ptr<ClassSymbol> cs);
   void replaceMethod(shared_ptr<MethodSymbol> ms);
+  int getMethodOffset(string s);
 
 private:
   vector<shared_ptr<MethodSymbol>> methods;

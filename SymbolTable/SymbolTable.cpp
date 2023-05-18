@@ -4,12 +4,10 @@
 SymbolTable::SymbolTable()
   : ScopeTable(), varTable(), methodTable(), classTable() {}
 
-SymbolTable::SymbolTable(const SymbolTable &st) {
-  ScopeTable = st.getScopeTable();
-  varTable = st.getVarTable();
-  methodTable = st.getMethodTable();
-  classTable = st.getClassTable();
-  parent = st.getParent();
+SymbolTable::SymbolTable(const SymbolTable &st)
+  : ScopeTable(st.getScopeTable()),  varTable (st.getVarTable()),
+    methodTable(st.getMethodTable()), classTable(st.getClassTable()),
+    parent(st.getParent()){
 }
 
 void SymbolTable::addClass(shared_ptr<ClassSymbol> cs) {

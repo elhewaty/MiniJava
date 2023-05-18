@@ -48,6 +48,7 @@ private:
   shared_ptr<SymbolTable> SymTable;
   ErrorHandling err;
   stack<shared_ptr<MethodSymbol>> CurMeth;
+  stack<shared_ptr<ClassSymbol>> CurClass;
   vector<string> ord;
   map<string, bool> exist;
   string mainClassName;

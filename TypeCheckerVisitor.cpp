@@ -79,9 +79,9 @@ string TypeCheckerVisitor::visit(VarDecl* n) {
 string TypeCheckerVisitor::visit(MethodDecl* n) {
   string s = n->i.accept(*this);
   SymTable = SymTable->getScope(n->i.s);
-  if(n->al.size() > 6) {
+  if(n->al.size() > 5) {
     auto c = CurClass.top();
-    cerr << BOLDRED << "Error:" << RESET << " function cannot have more than 6 "
+    cerr << BOLDRED << "Error:" << RESET << " function cannot have more than 5 "
     	 << "arguments." << endl;
     cerr << "location" << endl;
     cerr << "class: " << c->getName() << endl;
@@ -291,7 +291,7 @@ string TypeCheckerVisitor::visit(Call* n) {
   if(MethSym->getParameters().size() != n->el.size()) {
     err.emit(n->getLocation(),
     	     "function " + n->i.s + " expects "
-    	     + to_string(MethSym->getParameters().size()) + " but "
+             + to_string(MethSym->getParameters().size()) + " arguments but "
     	     + to_string(n->el.size()) + " provided");
     return "";
   }
@@ -336,7 +336,7 @@ string TypeCheckerVisitor::visit(False* n) {
 string TypeCheckerVisitor::visit(IdentifierExp* n) {
   auto sym = SymTable->varLookup(n->s);
   if(sym == nullptr) {
-    err.emit(n->getLocation(), "Symbol " + n->s + " was not declared");
+    err.emit(n->getLocation(), "Symbol `" + n->s + "` was not declared");
     return "";
   }
   return sym->getType();

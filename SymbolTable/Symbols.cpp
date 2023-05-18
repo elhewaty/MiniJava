@@ -1,5 +1,5 @@
 #include "Symbols.h"
-
+#include <cassert>
 //===============================================//
 //          Symbol class implementation          //
 //===============================================//
@@ -65,13 +65,16 @@ vector<shared_ptr<VarSymbol>> MethodSymbol::getParameters() const {
 
 void MethodSymbol::addParameter(shared_ptr<VarSymbol> s) {
   parameters.push_back(s);
+  s->setParent(static_pointer_cast<Symbol>(shared_from_this()));
 }
 
 void MethodSymbol::addLocal(shared_ptr<VarSymbol> s) {
-  locals[s->stringize()] = 1;;
+  locals[s->stringize()] = 1;
+  s->setParent(static_pointer_cast<Symbol>(shared_from_this()));
 }
 
 bool MethodSymbol::varExists(shared_ptr<VarSymbol> s) const {
+  if(!s) return 0;
   return locals.count(s->stringize());
 }
 
@@ -116,10 +119,12 @@ vector<shared_ptr<VarSymbol>> ClassSymbol::getVariables() const {
 
 void ClassSymbol::addMethod(shared_ptr<MethodSymbol> ms) {
   methods.push_back(ms);
+  ms->setParent(static_pointer_cast<Symbol>(shared_from_this()));
 }
 
 void ClassSymbol::addVariable(shared_ptr<VarSymbol> vs) {
   vars.push_back(vs);
+  vs->setParent(static_pointer_cast<Symbol>(shared_from_this()));
 }
 
 void ClassSymbol::addVarInExtClass(shared_ptr<VarSymbol> vs) {
@@ -146,4 +151,13 @@ void ClassSymbol::replaceMethod(shared_ptr<MethodSymbol> ms) {
       return;
     }
   }
+}
+
+int ClassSymbol::getMethodOffset(string s) {
+  for(int i = 0; i < methods.size(); i++) {
+    if(methods[i]->getName() == s) {
+      return i + 1;
+    }
+  }
+  assert(0);
 }

@@ -61,6 +61,7 @@ void SymbolTableVisitor::visit(MainClass* n) {
   MethSym->addParameter(VarSym);
   SymTable->addVar(VarSym);
   n->s->accept(*this);
+  MethSym->setParent(ClSym);
   // Exit main function scope
   SymTable = SymTable->exitScope();
   CurMeth.pop();
@@ -77,6 +78,7 @@ void SymbolTableVisitor::visit(ClassDeclSimple* n) {
   }
   shared_ptr<ClassSymbol> ClSym = make_shared<ClassSymbol>(n->i.s, "");
   SymTable->addClass(ClSym);
+  CurClass.push(ClSym);
   // Enter the class scope
   SymTable = SymTable->enterScope(n->i.s);
   // Collect member variables information
@@ -97,6 +99,7 @@ void SymbolTableVisitor::visit(ClassDeclSimple* n) {
     }
   }
   SymTable = SymTable->exitScope();
+  CurClass.pop();
 }
 
 // Identifier i;
@@ -125,7 +128,8 @@ void SymbolTableVisitor::visit(ClassDeclExtends* n) {
   }
 
   SymTable = SymTable->enterScope(n->i.s);
-  
+  CurClass.push(ClSym);
+
   // Collect member variables information
   for(int i = 0; i < (int)n->vl.size(); i++) {
     n->vl.at(i).accept(*this);
@@ -154,6 +158,7 @@ void SymbolTableVisitor::visit(ClassDeclExtends* n) {
       auto MethSymExt = ClSym->getMethod(MethSym->getName());
       if(MethSymExt != nullptr &&
 	MethSymExt->stringize() != MethSym->stringize()) {
+        // FIXME: We need to support method overloading.
 	cerr << BOLDRED << "Error:" << RESET
 	     << " Method override of function `" + m.i.s + "` doesn't match "
 	     << "the parent class method." << endl;
@@ -162,16 +167,18 @@ void SymbolTableVisitor::visit(ClassDeclExtends* n) {
 	err.error();
       } else {
         SymTable->addMethod(MethSym);
-	// If it's new function add it.
+        // If it's new function add it.
         if(MethSymExt == nullptr) {
           ClSym->addMethod(MethSym);
         } else {
           ClSym->replaceMethod(MethSym);
         }
+        MethSym->setParent(static_pointer_cast<Symbol>(ClSym));
       }
     }
   }
   SymTable = SymTable->exitScope();
+  CurClass.pop();
 }
 
 // Type* t
@@ -191,13 +198,14 @@ void SymbolTableVisitor::visit(VarDecl* n) {
   }
   bool declared = false;
   shared_ptr<VarSymbol> v = make_shared<VarSymbol>(n->i.s, t);
+  v->setParent(CurClass.top());
   if(!CurMeth.empty()) {
     declared = CurMeth.top()->varExists(v);
     CurMeth.top()->addLocal(v);
   } else {
     declared = (SymTable->varLookup(n->i.s)) != nullptr;
   }
-   
+
   if(declared) {
     err.emit(n->i.getLocation(), "redifinition of variable " + n->i.s);
   }
@@ -230,6 +238,8 @@ void SymbolTableVisitor::visit(MethodDecl* n) {
   SymTable->addMethod(MethSym);
   SymTable = SymTable->enterScope(MethSym->getName());
   CurMeth.push(MethSym);
+  MethSym->setParent(CurClass.top());
+
   for(int i = 0; i < (int)n->al.size(); i++) {
     MethSym->addParameter(make_shared<VarSymbol>(n->al.at(i).i.s,
                           n->al.at(i).t->stringize()));

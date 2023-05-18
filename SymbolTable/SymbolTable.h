@@ -19,6 +19,7 @@ public:
   shared_ptr<ClassSymbol> classLookup(string);
   shared_ptr<MethodSymbol> methodLookup(string);
   shared_ptr<VarSymbol> varLookup(string);
+  //shared_ptr<SymbolTable> getSymbol(string s) { return symbolLookupHelper(s); }
   map<string, shared_ptr<VarSymbol>> getVarTable() const;
   map<string, shared_ptr<MethodSymbol>> getMethodTable() const;
   map<string, shared_ptr<ClassSymbol>> getClassTable() const;

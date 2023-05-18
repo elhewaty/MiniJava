@@ -4,6 +4,7 @@
 #include "SymbolTable/SymbolTableVisitor.h"
 #include "TypeCheckerVisitor.h"
 #include "ClassFilter.h"
+#include "CodeGenVisitor.h"
 #include <cstring>
 
 using namespace std;
@@ -43,7 +44,21 @@ int main(int argc, char const *argv[]) {
     pr->accept(stv);
     TypeCheckerVisitor tcv(stv.getSymbolTable());
     pr->accept(tcv);
+  } else if(strcmp("-C", argv[1]) == 0) {
+    Parser p(argv[2]);
+    auto pr = p.parse();
+    auto t = p.getEdges();
+    ClassFilter cf(p.getEdges(), p.getOrder());
+    cf.detect();
+    auto v = cf.getOrderList();
+    SymbolTableVisitor stv(v);
+    pr->accept(stv);
+    TypeCheckerVisitor tcv(stv.getSymbolTable());
+    pr->accept(tcv);
+    freopen("runtime/demo.s", "w", stdout);
+    CodeGenVisitor cgv(stv.getSymbolTable());
+    pr->accept(cgv);
+    fclose(stdout);
   }
   return 0;
 }
-
